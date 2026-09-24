@@ -51,24 +51,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const primaryProvider = firebaseUser.providerData[0]?.providerId || 'google.com';
-    const profile: Omit<UserProfile, 'createdAt' | 'updatedAt'> = {
+    const profileData = {
       uid: firebaseUser.uid,
       email: firebaseUser.email ?? '',
       displayName:
         firebaseUser.displayName ??
         firebaseUser.email?.split('@')[0] ??
         'User',
-      photoURL: firebaseUser.photoURL ?? undefined,
+      photoURL: firebaseUser.photoURL ?? null,
       provider: primaryProvider,
-      coupleId: undefined,
-      partnerId: undefined,
-    };
-    await setDoc(ref, {
-      ...profile,
+      coupleId: null,
+      partnerId: null,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-    });
-    return profile as UserProfile;
+    };
+    await setDoc(ref, profileData);
+    return profileData as unknown as UserProfile;
   }
 
   useEffect(() => {
