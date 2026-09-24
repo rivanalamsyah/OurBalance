@@ -1,78 +1,118 @@
-# OurBalance — Couple Finance Management System
+# OurBalance — Personal Finance for Two
 
-Aplikasi manajemen keuangan pasangan modern yang dirancang untuk dua pengguna (pasangan) dengan transparansi finansial, anggaran bersama, target impian (goals), pencatatan rekening, laporan visual, dan sistem pelunasan utang/piutang otomatis.
-
----
-
-## 🔐 Authentication System (Autentikasi & Keamanan)
-
-OurBalance menggunakan **Firebase Authentication** sebagai satu-satunya sumber identitas utama (*Single Source of Truth*). Sistem autentikasi mendukung dua metode masuk:
-
-1. **Email / Password** — Pendaftaran manual dengan verifikasi format email dan enkripsi standar Firebase.
-2. **Google Sign-In** — Autentikasi satu klik menggunakan Google OAuth resmi via `GoogleAuthProvider` dan `signInWithPopup`.
-
-### Features & Security Highlights
-
-* **Unified User Profile (`users/{uid}`)**: Baik melalui Email/Password maupun Google Sign-In, profile pengguna dibuat secara otomatis di Cloud Firestore saat login pertama kali menggunakan Firebase Auth `uid` sebagai dokumen ID. Data yang disimpan meliputi `uid`, `email`, `displayName`, `photoURL`, `provider`, `createdAt`, dan `updatedAt`.
-* **Zero Duplicate Accounts**: Identitas pengguna diikat penuh pada Firebase Auth `uid`. Sistem mencegah pembentukan akun ganda.
-* **Non-Destructive Profile Merging**: Jika profil Firestore pengguna sudah ada saat login Google, sistem mempertahankan data sensitif pengguna (seperti `coupleId`, `partnerId`, dan histori keuangan) dan hanya memperbarui timestamp `updatedAt`.
-* **Credential Protection**: Aplikasi tidak pernah menyimpan OAuth access token atau password Google di `localStorage` maupun Firestore.
-* **Friendly Indonesian Error Handling**: Penanganan error lengkap untuk `auth/popup-closed-by-user`, `auth/popup-blocked`, `auth/account-exists-with-different-credential`, `auth/unauthorized-domain`, `auth/operation-not-allowed`, dan `auth/network-request-failed`.
-* **Auth State Listener**: Session dikelola secara real-time via `onAuthStateChanged` di `AuthContext`, memastikan login tetap aktif setelah browser refresh dan Protected Routes bekerja sempurna.
+Aplikasi web manajemen keuangan pasangan modern yang dirancang untuk membantu dua pengguna (pasangan) mengelola finansial pribadi maupun bersama secara transparan, akurat, dan terstruktur.
 
 ---
 
-## 🛠️ Konfigurasi Google Authentication di Firebase Console
+### 1. Tentang OurBalance
 
-Untuk mengaktifkan login Google pada environment development maupun production:
+OurBalance adalah platform pengelola keuangan berbasis web yang mengusung konsep **“Personal Finance for Two”**. Target penggunanya adalah pasangan yang ingin membangun transparansi finansial, mengontrol anggaran bersama, mencatat alokasi rekening, serta merencanakan target tabungan impian secara kolaboratif.
 
-### 1. Mengaktifkan Sign-In Provider Google
-1. Buka [Firebase Console](https://console.firebase.google.com/) dan pilih project **OurBalance**.
-2. Masuk ke menu **Build** > **Authentication** > tab **Sign-in method**.
-3. Klik pada provider **Google**.
-4. Aktifkan saklar **Enable**.
-5. Pilih **Project support email** yang valid.
-6. Simpan konfigurasi.
-
-### 2. Mengkonfigurasi Authorized Domains
-Agar Google OAuth Popup tidak diblokir atau menghasilkan error `auth/unauthorized-domain`:
-1. Masuk ke **Authentication** > tab **Settings** > **Authorized domains**.
-2. Pastikan domain berikut terdaftar:
-   * `localhost` (untuk pengembangan lokal)
-   * `ourbalance.web.app` (domain production utama)
-   * `ourbalance.firebaseapp.com` (domain fallback Firebase)
+* **Production URL**: [https://ourbalance.web.app](https://ourbalance.web.app)
+* **Repository GitHub**: [https://github.com/rivanalamsyah/OurBalance.git](https://github.com/rivanalamsyah/OurBalance.git)
 
 ---
 
-## 🏗️ Firestore Security Rules
+### 2. Fitur Utama
 
-Firestore Security Rules diatur secara ketat tanpa membedakan metode login pengguna (Email/Password maupun Google). Selama `request.auth.uid` valid:
-* Pengguna hanya dapat membaca & menulis data pribadi mereka.
-* Data pasangan (`couples`, `accounts`, `transactions`, `budgets`, `goals`, `sharedExpenses`) hanya dapat diakses oleh pengguna yang terverifikasi sebagai anggota couple (`isMember(coupleId)`).
-* `uid` dan `email` bersifat immutable setelah profil dibuat.
+* **Authentication**: Login & registrasi Email/Password serta Google Sign-In yang cepat dan aman.
+* **Dashboard**: Ringkasan saldo total, arus kas bulanan, persentase anggaran, dan riwayat transaksi.
+* **Transactions**: Pencatatan transaksi Pemasukan, Pengeluaran, Transfer antar rekening, dan Pengeluaran Bersama.
+* **Accounts**: Pengelolaan rekening pribadi & bersama (Cash, Bank, E-Wallet, Credit, dll).
+* **Budget**: Pemantauan batas anggaran bulanan per kategori dengan indikator peringatan.
+* **Goals**: Perencanaan target impian finansial pribadi dan bersama.
+* **Shared Finance**: Pencatatan pengeluaran bersama (*Shared Expenses*) dan pelunasan utang (*Settlement*).
+* **Reports**: Grafik visual tren arus kas harian/bulanan dan pengeluaran per kategori.
+* **Settings**: Pengaturan profil pengguna, koneksi akun pasangan, dan kustomisasi kategori.
 
 ---
 
-## 🚀 Memulai & Pengoperasian Lokal
+### 3. Tech Stack
 
-### Prasyarat
-* Node.js (v18+)
-* npm / pnpm / yarn
+* **React 19** — Library UI berbasis komponen
+* **TypeScript** — Type-safety penuh pada seluruh codebase
+* **Vite** — Build tool & development server
+* **React Router v7** — Routing aplikasi SPA & protected routes
+* **Firebase Authentication** — Pengelolaan identitas Email/Password & Google Sign-In
+* **Cloud Firestore** — Database NoSQL real-time
+* **Firebase Hosting** — Media penyedia SSL dan deployment production
+* **Firebase Spark Plan** — Konfigurasi infrastruktur gratis yang efisien
 
-### Langkah Installasi
+---
+
+### 4. Arsitektur & Struktur Project
+
+OurBalance menggunakan **Feature-Based Modular Architecture** dengan alur data sebagai berikut:
+
+`Firebase SDK → Service Layer → Custom Hooks → Feature Pages → Reusable UI`
+
+Struktur direktori utama:
+
+```
+src/
+├── components/          # Reusable UI controls (Button, Modal, Table, Input) & Layout
+├── constants/           # Router path definitions (routes.ts)
+├── contexts/            # Global state (AuthContext.tsx, ToastContext.tsx)
+├── features/            # Modul fitur terenkapsulasi
+│   ├── accounts/        # Rekening pribadi & bersama
+│   ├── auth/            # Halaman login/register & auth service
+│   ├── budgets/         # Manajemen anggaran bulanan
+│   ├── dashboard/       # Ringkasan KPI & grafik utama
+│   ├── goals/           # Target tabungan impian
+│   ├── reports/         # Laporan & analisis grafik
+│   ├── settings/        # Profil, koneksi couple, & kategori
+│   ├── shared/          # Pengeluaran bersama & settlement
+│   └── transactions/    # Catatan transaksi & pencarian
+├── layouts/             # AppLayout (Sidebar/BottomNav) & AuthLayout
+├── lib/                 # Konfigurasi Firebase (firebase.ts)
+├── types/               # TypeScript models (index.ts)
+└── utils/               # Pure helper functions (format.ts)
+```
+
+---
+
+### 5. Authentication & Security
+
+* **Metode Login**: Mendukung Email/Password dan Google Sign-In via `GoogleAuthProvider` & `signInWithPopup`.
+* **Session Persistence**: Session dipertahankan secara otomatis oleh Firebase listener `onAuthStateChanged`.
+* **Protected Routes**: Membatasi halaman internal agar hanya dapat diakses pengguna terautentikasi.
+* **Backend Authorization**: Hak akses data dijamin melalui Firestore Security Rules menggunakan verifikasi `isOwner(userId)` dan `isMember(coupleId)`.
+* **Keamanan Kredensial**: Kredensial atau OAuth access token tidak pernah disimpan di `localStorage`.
+
+---
+
+### 6. Database
+
+Menggunakan **Cloud Firestore** dengan struktur koleksi:
+
+* `users`: Profil pengguna (`uid`, `email`, `displayName`, `photoURL`, `provider`).
+* `couples`: Pasangan terhubung (`member1Id`, `member2Id`).
+* `accounts`: Rekening finansial (`userId`, `coupleId`, `balance`, `isShared`).
+* `categories`: Kategori transaksi (`coupleId`, `type`, `scope`).
+* `transactions`: Transaksi keuangan (`userId`, `coupleId`, `amount`, `type`).
+* `budgets`: Batas anggaran bulanan (`userId`, `coupleId`, `categoryId`, `amount`).
+* `goals`: Target impian tabungan (`coupleId`, `targetAmount`, `currentAmount`).
+* `sharedExpenses`: Pengeluaran bersama pasangan (`coupleId`, `paidBy`, `splits`).
+* `settlements`: Catatan pelunasan utang (`coupleId`, `fromUserId`, `toUserId`).
+
+---
+
+### 7. Instalasi & Development
+
 ```bash
 # 1. Clone repository
-git clone https://github.com/your-repo/ourbalance.git
+git clone https://github.com/rivanalamsyah/OurBalance.git
 cd OurBalance
 
 # 2. Install dependensi
 npm install
 
-# 3. Konfigurasi Environment Variable (.env)
+# 3. Salin environment variable
 cp .env.example .env
 ```
 
-Isi file `.env` sesuai dengan konfigurasi project Firebase:
+Sesuaikan `.env` dengan Firebase Web App config Anda:
+
 ```env
 VITE_FIREBASE_API_KEY=your_api_key
 VITE_FIREBASE_AUTH_DOMAIN=ourbalance.firebaseapp.com
@@ -82,30 +122,65 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
 ```
 
-### Jalankan Development Server
+Jalankan server pengembang:
+
 ```bash
 npm run dev
 ```
 
-### Type Check & Build Production
+---
+
+### 8. Build, Testing & Deployment
+
+Perintah pengujian dan deployment aktual yang tersedia pada `package.json`:
+
 ```bash
-npm run tsc
+# TypeScript Type Check
+npx tsc --noEmit
+
+# Code Linting (Oxlint)
+npm run lint
+
+# Production Build
 npm run build
+
+# Preview Hasil Build Lokal
+npm run preview
+
+# Deploy ke Firebase Hosting
+firebase deploy --only hosting
 ```
 
----
-
-## 🚨 Troubleshooting Google Authentication
-
-| Masalah / Error | Penyebab | Solusi |
-|---|---|---|
-| `auth/popup-closed-by-user` | Pengguna menutup popup Google sebelum login selesai. | Coba lagi dan selesaikan login di popup. |
-| `auth/popup-blocked` | Browser memblokir popup window. | Klik ikon blokir popup di URL bar browser lalu pilih "Allow popups for this site". |
-| `auth/unauthorized-domain` | Domain belum terdaftar di Firebase. | Tambahkan domain aktif ke Firebase Console > Authentication > Settings > Authorized Domains. |
-| `auth/account-exists-with-different-credential` | Email sudah terdaftar via Email/Password. | Masuk menggunakan form Email/Password terlebih dahulu. |
-| `auth/operation-not-allowed` | Provider Google belum diaktifkan. | Aktifkan provider Google di Firebase Console. |
+Target URL Production: [https://ourbalance.web.app](https://ourbalance.web.app)
 
 ---
 
-## 📄 Lisensi
-Hak Cipta © 2026 OurBalance. All rights reserved.
+### 9. Security, Data & Production Notes
+
+* **Privasi Kredensial**: File `.env` dan `.env.local` terisolasi di `.gitignore`.
+* **Backend Security**: Firestore Security Rules menjadi pengaman utama validasi hak akses.
+* **Integritas Data**: Menggunakan data Firestore asli tanpa statistik atau dummy buatan pada produksi.
+* **Efisiensi Spark Plan**: Query dioptimalkan dengan indeks komposit untuk menekan kuota Firestore.
+
+---
+
+### 10. Status Project & Dokumentasi
+
+Status rilis produksi berdasarkan hasil audit aktual:
+
+* **Production Status**: Production Ready
+* **Build Status**: Passed (0 Errors)
+* **Firebase Hosting**: Deployed (`ourbalance.web.app`)
+* **Authentication**: Verified (Email/Password & Google Sign-In)
+* **Firestore Integrity**: Verified
+* **Security Rules**: Verified
+
+Dokumentasi teknis lengkap tersedia di direktori `docs/`:
+
+* [`docs/architecture.md`](file:///d:/OurBalance/docs/architecture.md) — Arsitektur & alur data aplikasi
+* [`docs/database.md`](file:///d:/OurBalance/docs/database.md) — Schema Firestore & indeks
+* [`docs/security.md`](file:///d:/OurBalance/docs/security.md) — Keamanan & Firestore Security Rules
+* [`docs/deployment.md`](file:///d:/OurBalance/docs/deployment.md) — Prosedur deployment & rollback
+* [`docs/development.md`](file:///d:/OurBalance/docs/development.md) — Panduan kontribusi pengembang
+* [`docs/testing.md`](file:///d:/OurBalance/docs/testing.md) — Quality gates & checklist pengujian
+* [`docs/audit.md`](file:///d:/OurBalance/docs/audit.md) — Laporan audit rilis produksi
