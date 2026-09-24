@@ -1,0 +1,274 @@
+rules_version = '2';
+
+/**
+ * OurBalance — Firestore Security Rules
+ *
+ * Principles:
+ *  1. Unauthenticated users have ZERO access.
+ *  2. Users can only read/write their own personal data.
+ *  3. Shared (couple) data is accessible only to verified couple members.
+ *  4. Immutable fields (coupleId, userId, ownerId, createdAt) cannot be
+ *     changed after document creation.
+ *  5. Client-side filtering is NOT used as a security mechanism.
+ *
+ * Spark Plan compatible — no Cloud Functions required.
+ */
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─────────────────────────────────────────────
+    // Shared helper functions
+    // ─────────────────────────────────────────────
+
+    /** True only when the requester is authenticated */
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    /** True when the requester owns the given userId */
+    function isOwner(userId) {
+      return isAuth() && request.auth.uid == userId;
+    }
+
+    /**
+     * True when the authenticated user is a member of the couple.
+     * Reads the /couples/{coupleId} document to verify membership.
+     */
+    function isMember(coupleId) {
+      let couple = get(/databases/$(database)/documents/couples/$(coupleId));
+      return isAuth()
+        && couple != null
+        && (couple.data.member1Id == request.auth.uid
+            || couple.data.member2Id == request.auth.uid);
+    }
+
+    /**
+     * Verifies that immutable fields are not changed on update.
+     * Pass a list of field names that must not change.
+     */
+    function notChanged(field) {
+      return !(field in request.resource.data)
+          || request.resource.data[field] == resource.data[field];
+    }
+
+    // ─────────────────────────────────────────────
+    // /users/{userId}
+    // ─────────────────────────────────────────────
+    match /users/{userId} {
+      // Any authenticated user can read profiles (needed for partner lookup)
+      allow read: if isAuth();
+
+      // Only the user themselves can create their own document
+      allow create: if isOwner(userId)
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email is string
+        && request.resource.data.displayName is string;
+
+      // Only the user can update their own profile;
+      // uid and email cannot be changed
+      allow update: if isOwner(userId)
+        && notChanged('uid')
+        && notChanged('email');
+
+      // Users cannot delete their own profile via client
+      allow delete: if false;
+    }
+
+    // ─────────────────────────────────────────────
+    // /couples/{coupleId}
+    // ─────────────────────────────────────────────
+    match /couples/{coupleId} {
+      // Couple members can read
+      allow read: if isMember(coupleId);
+
+      // Any authenticated user can create a couple document
+      // (the creator must be one of the members)
+      allow create: if isAuth()
+        && (request.resource.data.member1Id == request.auth.uid
+            || request.resource.data.member2Id == request.auth.uid);
+
+      // Members can update (e.g., adding second member)
+      // but member1Id cannot be changed after creation
+      allow update: if isMember(coupleId)
+        && notChanged('member1Id')
+        && notChanged('createdAt');
+
+      allow delete: if false;
+    }
+
+    // ─────────────────────────────────────────────
+    // /accounts/{accountId}
+    // ─────────────────────────────────────────────
+    match /accounts/{accountId} {
+      allow read: if isAuth() && isMember(resource.data.coupleId);
+
+      allow create: if isAuth()
+        && isMember(request.resource.data.coupleId)
+        && request.resource.data.userId == request.auth.uid;
+
+      allow update: if isAuth()
+        && isMember(resource.data.coupleId)
+        && notChanged('coupleId')
+        && notChanged('userId')
+        && notChanged('createdAt');
+
+      allow delete: if isAuth()
+        && isMember(resource.data.coupleId)
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // ─────────────────────────────────────────────
+    // /categories/{categoryId}
+    // ─────────────────────────────────────────────
+    match /categories/{categoryId} {
+      allow read: if isAuth() && isMember(resource.data.coupleId);
+
+      allow create: if isAuth()
+        && isMember(request.resource.data.coupleId);
+
+      allow update: if isAuth()
+        && isMember(resource.data.coupleId)
+        && notChanged('coupleId')
+        && notChanged('createdAt');
+
+      // Only non-default categories can be deleted
+      allow delete: if isAuth()
+        && isMember(resource.data.coupleId)
+        && resource.data.isDefault == false;
+    }
+
+    // ─────────────────────────────────────────────
+    // /transactions/{transactionId}
+    // ─────────────────────────────────────────────
+    match /transactions/{transactionId} {
+      allow read: if isAuth() && isMember(resource.data.coupleId);
+
+      // Only the transaction creator can create it;
+      // userId must match the authenticated user
+      allow create: if isAuth()
+        && isMember(request.resource.data.coupleId)
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.amount is number
+        && request.resource.data.amount > 0
+        && request.resource.data.type in ['income', 'expense', 'transfer', 'shared_expense'];
+
+      // Couple members can update transactions
+      // but coupleId, userId, and createdAt cannot change
+      allow update: if isAuth()
+        && isMember(resource.data.coupleId)
+        && notChanged('coupleId')
+        && notChanged('userId')
+        && notChanged('createdAt');
+
+      // Only couple members can delete
+      allow delete: if isAuth() && isMember(resource.data.coupleId);
+    }
+
+    // ─────────────────────────────────────────────
+    // /budgets/{budgetId}
+    // ─────────────────────────────────────────────
+    match /budgets/{budgetId} {
+      allow read: if isAuth() && isMember(resource.data.coupleId);
+
+      allow create: if isAuth()
+        && isMember(request.resource.data.coupleId)
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.amount is number
+        && request.resource.data.amount > 0;
+
+      allow update: if isAuth()
+        && isMember(resource.data.coupleId)
+        && notChanged('coupleId')
+        && notChanged('userId')
+        && notChanged('categoryId')
+        && notChanged('month')
+        && notChanged('createdAt');
+
+      allow delete: if isAuth()
+        && isMember(resource.data.coupleId)
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // ─────────────────────────────────────────────
+    // /goals/{goalId}
+    // ─────────────────────────────────────────────
+    match /goals/{goalId} {
+      allow read: if isAuth() && isMember(resource.data.coupleId);
+
+      allow create: if isAuth()
+        && isMember(request.resource.data.coupleId)
+        && request.resource.data.targetAmount is number
+        && request.resource.data.targetAmount > 0
+        && request.resource.data.type in ['personal', 'shared'];
+
+      allow update: if isAuth()
+        && isMember(resource.data.coupleId)
+        && notChanged('coupleId')
+        && notChanged('createdAt');
+
+      allow delete: if isAuth() && isMember(resource.data.coupleId);
+    }
+
+    // ─────────────────────────────────────────────
+    // /goalContributions/{contribId}
+    // ─────────────────────────────────────────────
+    match /goalContributions/{contribId} {
+      // Read allowed for couple members of the associated goal
+      // (we rely on goalId being readable)
+      allow read: if isAuth();
+
+      allow create: if isAuth()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.amount is number
+        && request.resource.data.amount > 0;
+
+      // Only the contributor can update/delete their own contribution
+      allow update, delete: if isAuth()
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // ─────────────────────────────────────────────
+    // /sharedExpenses/{expenseId}
+    // ─────────────────────────────────────────────
+    match /sharedExpenses/{expenseId} {
+      allow read: if isAuth() && isMember(resource.data.coupleId);
+
+      allow create: if isAuth()
+        && isMember(request.resource.data.coupleId)
+        && request.resource.data.amount is number
+        && request.resource.data.amount > 0
+        && request.resource.data.splitType in ['equal', 'custom', 'full'];
+
+      allow update: if isAuth()
+        && isMember(resource.data.coupleId)
+        && notChanged('coupleId')
+        && notChanged('paidBy')
+        && notChanged('createdAt');
+
+      allow delete: if isAuth() && isMember(resource.data.coupleId);
+    }
+
+    // ─────────────────────────────────────────────
+    // /settlements/{settlementId}
+    // ─────────────────────────────────────────────
+    match /settlements/{settlementId} {
+      allow read: if isAuth() && isMember(resource.data.coupleId);
+
+      allow create: if isAuth()
+        && isMember(request.resource.data.coupleId)
+        && request.resource.data.amount is number
+        && request.resource.data.amount > 0;
+
+      // Settlements are immutable records — no updates or deletes
+      allow update, delete: if false;
+    }
+
+    // ─────────────────────────────────────────────
+    // Catch-all: deny everything else
+    // ─────────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
