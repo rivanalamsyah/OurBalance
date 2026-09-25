@@ -54,9 +54,8 @@ export function Sidebar() {
           <img
             src="/logo.png"
             alt="OurBalance Logo"
-            style={{ width: 28, height: 28, objectFit: 'contain', flexShrink: 0 }}
+            className="sidebar-logo-img"
           />
-          <span className="sidebar-logo-text">OurBalance</span>
         </div>
         <button
           className="sidebar-collapse-btn"
