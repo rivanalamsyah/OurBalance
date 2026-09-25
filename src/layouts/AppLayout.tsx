@@ -15,15 +15,17 @@ export function AppLayout() {
   }, [pathname]);
 
   return (
-    <div className="app-layout">
+    <div className="app-wrapper">
       <TopBar onOpenMobileMenu={() => setMobileMenuOpen(true)} />
-      <Sidebar
-        mobileOpen={mobileMenuOpen}
-        onCloseMobile={() => setMobileMenuOpen(false)}
-      />
-      <main className="main-content" id="main-content">
-        <Outlet />
-      </main>
+      <div className="app-layout">
+        <Sidebar
+          mobileOpen={mobileMenuOpen}
+          onCloseMobile={() => setMobileMenuOpen(false)}
+        />
+        <main className="main-content" id="main-content">
+          <Outlet />
+        </main>
+      </div>
       <BottomNav onOpenMobileMenu={() => setMobileMenuOpen(true)} />
     </div>
   );

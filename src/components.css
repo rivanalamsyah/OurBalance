@@ -719,7 +719,7 @@
 
 /* Mobile: drawer sidebar, show topbar */
 @media (max-width: 1023px) {
-  .topbar { display: flex; }
+  .topbar { display: flex; width: 100%; }
   .desktop-only { display: none !important; }
   .mobile-only { display: flex !important; }
 
@@ -756,6 +756,11 @@
   .sidebar-close-btn:hover {
     background: var(--color-gray-200);
     color: var(--color-text-primary);
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
   }
 }
 
