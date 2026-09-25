@@ -1,4 +1,4 @@
-import { Menu, User } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { ROUTES } from '../../constants/routes';

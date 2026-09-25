@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, CreditCard, Wallet, PieChart, Target, Users,
@@ -38,6 +38,24 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
   const { user, userProfile, logout } = useAuth();
   const { success, error } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        onCloseMobile?.();
+      }
+    }
+
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [mobileOpen, onCloseMobile]);
 
   async function handleLogout() {
     try {

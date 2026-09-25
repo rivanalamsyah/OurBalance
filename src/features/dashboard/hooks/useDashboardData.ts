@@ -10,7 +10,7 @@ export function useDashboardData(
   goals: Goal[],
   categories: Category[],
   userProfile: UserProfile | null,
-  partnerProfile: UserProfile | null
+  _partnerProfile: UserProfile | null
 ) {
   const currentMonth = getCurrentMonth();
 
