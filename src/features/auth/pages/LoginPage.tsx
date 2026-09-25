@@ -176,7 +176,7 @@ export function LoginPage() {
           <img
             src="/logo.png"
             alt="OurBalance Logo"
-            style={{ width: 128, height: 128, objectFit: 'contain' }}
+            style={{ height: 48, width: 'auto', maxWidth: 220, objectFit: 'contain' }}
           />
         </div>
 

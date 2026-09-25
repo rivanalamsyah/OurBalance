@@ -355,13 +355,13 @@
 }
 
 .sidebar-header {
-  padding: var(--space-4);
+  padding: var(--space-4) var(--space-3);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   border-bottom: 1px solid var(--color-border-light);
-  min-height: 140px;
+  min-height: 64px;
 }
 
 .sidebar-logo {
@@ -372,38 +372,45 @@
 }
 
 .sidebar-logo-img {
-  width: 128px;
-  height: 128px;
+  height: 38px;
+  width: auto;
+  max-width: 150px;
   object-fit: contain;
-  transition: all var(--transition-slow);
+  transition: all var(--transition-base);
 }
 
 .sidebar.collapsed .sidebar-header {
   padding: var(--space-3) var(--space-2);
-  min-height: 64px;
+  min-height: 56px;
 }
 
 .sidebar.collapsed .sidebar-logo-img {
-  width: 36px;
-  height: 36px;
+  height: 28px;
+  width: 28px;
+  object-fit: contain;
 }
 
 .sidebar-collapse-btn {
   position: absolute;
-  right: 6px;
-  top: 12px;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-sm);
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-md);
   color: var(--color-text-muted);
   transition: all var(--transition-fast);
   flex-shrink: 0;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   z-index: 2;
+}
+
+.sidebar.collapsed .sidebar-collapse-btn {
+  right: 4px;
 }
 
 .sidebar-collapse-btn:hover { background: var(--color-gray-100); color: var(--color-text-primary); }
@@ -967,7 +974,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-4);
 }
 
 .login-logo-icon {

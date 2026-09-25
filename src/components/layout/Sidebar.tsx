@@ -52,7 +52,7 @@ export function Sidebar() {
       <div className="sidebar-header">
         <div className="sidebar-logo">
           <img
-            src="/logo.png"
+            src={collapsed ? '/favicon.png' : '/logo.png'}
             alt="OurBalance Logo"
             className="sidebar-logo-img"
           />
