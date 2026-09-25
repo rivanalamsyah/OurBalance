@@ -1,16 +1,19 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, CreditCard, PieChart, Target, Users } from 'lucide-react';
+import { LayoutDashboard, CreditCard, PieChart, Target, Menu } from 'lucide-react';
 import { ROUTES } from '../../constants/routes';
+
+interface BottomNavProps {
+  onOpenMobileMenu?: () => void;
+}
 
 const navItems = [
   { label: 'Dashboard', path: ROUTES.DASHBOARD, icon: LayoutDashboard },
   { label: 'Transaksi', path: ROUTES.TRANSACTIONS, icon: CreditCard },
   { label: 'Anggaran', path: ROUTES.BUDGET, icon: PieChart },
   { label: 'Goals', path: ROUTES.GOALS, icon: Target },
-  { label: 'Bersama', path: ROUTES.SHARED, icon: Users },
 ];
 
-export function BottomNav() {
+export function BottomNav({ onOpenMobileMenu }: BottomNavProps) {
   return (
     <nav className="bottom-nav" aria-label="Mobile navigation">
       {navItems.map(({ label, path, icon: Icon }) => (
@@ -26,6 +29,18 @@ export function BottomNav() {
           <span>{label}</span>
         </NavLink>
       ))}
+
+      <button
+        type="button"
+        className="bottom-nav-item btn-link-reset"
+        onClick={onOpenMobileMenu}
+        aria-label="Menu Lengkap"
+      >
+        <span className="bottom-nav-icon">
+          <Menu size={20} />
+        </span>
+        <span>Menu</span>
+      </button>
     </nav>
   );
 }
