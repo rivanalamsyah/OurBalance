@@ -176,9 +176,8 @@ export function LoginPage() {
           <img
             src="/logo.png"
             alt="OurBalance Logo"
-            style={{ width: 36, height: 36, objectFit: 'contain', flexShrink: 0 }}
+            style={{ width: 64, height: 64, objectFit: 'contain' }}
           />
-          <span className="login-logo-text">OurBalance</span>
         </div>
 
         <h1 className="login-title">{titles[mode]}</h1>
