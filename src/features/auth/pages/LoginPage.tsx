@@ -173,9 +173,11 @@ export function LoginPage() {
     <div className="login-page">
       <div className="login-card animate-fade-in">
         <div className="login-logo">
-          <div className="login-logo-icon" aria-hidden>
-            <TrendingUp size={22} />
-          </div>
+          <img
+            src="/logo.png"
+            alt="OurBalance Logo"
+            style={{ width: 36, height: 36, objectFit: 'contain', flexShrink: 0 }}
+          />
           <span className="login-logo-text">OurBalance</span>
         </div>
 

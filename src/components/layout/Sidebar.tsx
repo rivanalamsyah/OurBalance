@@ -51,9 +51,11 @@ export function Sidebar() {
     <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`} aria-label="Main navigation">
       <div className="sidebar-header">
         <div className="sidebar-logo">
-          <div className="sidebar-logo-icon">
-            <TrendingUp size={18} />
-          </div>
+          <img
+            src="/logo.png"
+            alt="OurBalance Logo"
+            style={{ width: 28, height: 28, objectFit: 'contain', flexShrink: 0 }}
+          />
           <span className="sidebar-logo-text">OurBalance</span>
         </div>
         <button
