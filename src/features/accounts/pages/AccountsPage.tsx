@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Plus, Wallet, Landmark, Smartphone, CreditCard, Edit2, Trash2 } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useCouple } from '../../settings/hooks/useCouple';
 import { useAccounts } from '../hooks/useAccounts';
+import { useTransactions } from '../../transactions/hooks/useTransactions';
 import { addAccount, updateAccount, deleteAccount } from '../services/accountService';
 import { formatCurrency } from '../../../utils/format';
+import { calculateAccountBalances } from '../../../utils/financial';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Select } from '../../../components/ui/Select';
@@ -41,9 +43,11 @@ const defaultForm: FormData = {
 export function AccountsPage() {
   const { user } = useAuth();
   const { coupleId } = useCouple();
-  const { accounts, loading } = useAccounts(coupleId);
+  const { accounts, loading: accLoading } = useAccounts(coupleId);
+  const { transactions, loading: txLoading } = useTransactions(coupleId);
   const { success, error: showError } = useToast();
 
+  const loading = accLoading || txLoading;
   const location = useLocation();
   const navigate = useNavigate();
   const params = useParams();
@@ -55,6 +59,11 @@ export function AccountsPage() {
   const [formErrors, setFormErrors] = useState<Partial<Record<keyof FormData, string>>>({});
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  const computedAccounts = useMemo(
+    () => calculateAccountBalances(accounts, transactions),
+    [accounts, transactions]
+  );
 
   useEffect(() => {
     document.title = 'Accounts | OurBalance';
@@ -68,7 +77,7 @@ export function AccountsPage() {
       setFormErrors({});
       setShowModal(true);
     } else if (params.accountId && location.pathname.endsWith('/edit')) {
-      const acc = accounts.find((a) => a.id === params.accountId);
+      const acc = computedAccounts.find((a) => a.id === params.accountId);
       if (acc) {
         setEditingAcc(acc);
         setFormData({
@@ -81,9 +90,9 @@ export function AccountsPage() {
         setShowModal(true);
       }
     }
-  }, [location.pathname, params.accountId, accounts]);
+  }, [location.pathname, params.accountId, computedAccounts]);
 
-  const totalBalance = accounts.reduce((sum, a) => sum + a.balance, 0);
+  const totalBalance = computedAccounts.reduce((sum, a) => sum + a.balance, 0);
 
   function openAdd() {
     navigate(ROUTES.ACCOUNTS_NEW);
@@ -178,7 +187,7 @@ export function AccountsPage() {
             </div>
           ))}
         </div>
-      ) : accounts.length === 0 ? (
+      ) : computedAccounts.length === 0 ? (
         <div className="empty-state" style={{ marginTop: 40 }}>
           <Wallet className="empty-state-icon" />
           <p className="empty-state-title">Belum ada rekening</p>
@@ -189,7 +198,7 @@ export function AccountsPage() {
         </div>
       ) : (
         <div className="grid-auto">
-          {accounts.map((acc) => (
+          {computedAccounts.map((acc) => (
             <div key={acc.id} className="account-card animate-fade-in">
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
                 <div className="account-type-badge">

@@ -31,6 +31,7 @@ export interface Account {
   coupleId: string;
   name: string;
   type: AccountType;
+  initialBalance?: number;
   balance: number;
   currency: string;
   color?: string;

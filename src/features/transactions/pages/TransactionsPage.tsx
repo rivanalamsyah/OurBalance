@@ -11,6 +11,7 @@ import { useAccounts } from '../../accounts/hooks/useAccounts';
 import { useCategories } from '../../settings/hooks/useCategories';
 import { addTransaction, updateTransaction, deleteTransaction } from '../services/transactionService';
 import { formatCurrency, formatDate, getCurrentMonth } from '../../../utils/format';
+import { calculateAccountBalances } from '../../../utils/financial';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Select } from '../../../components/ui/Select';
@@ -56,6 +57,11 @@ export function TransactionsPage() {
   const { accounts } = useAccounts(coupleId);
   const { categories } = useCategories(coupleId);
   const { success, error: showError } = useToast();
+
+  const computedAccounts = useMemo(
+    () => calculateAccountBalances(accounts, transactions),
+    [accounts, transactions]
+  );
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -428,7 +434,7 @@ export function TransactionsPage() {
             error={formErrors.accountId}
             options={[
               { value: '', label: 'Pilih Akun' },
-              ...accounts.map((a) => ({ value: a.id, label: `${a.name} (${formatCurrency(a.balance)})` })),
+              ...computedAccounts.map((a) => ({ value: a.id, label: `${a.name} (${formatCurrency(a.balance)})` })),
             ]}
             required
           />
@@ -441,7 +447,7 @@ export function TransactionsPage() {
               error={formErrors.toAccountId}
               options={[
                 { value: '', label: 'Pilih Rekening Tujuan' },
-                ...accounts.filter((a) => a.id !== formData.accountId).map((a) => ({
+                ...computedAccounts.filter((a) => a.id !== formData.accountId).map((a) => ({
                   value: a.id,
                   label: `${a.name} (${formatCurrency(a.balance)})`,
                 })),

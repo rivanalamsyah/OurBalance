@@ -12,6 +12,7 @@ import { useAccounts } from '../../accounts/hooks/useAccounts';
 import { useCategories } from '../../settings/hooks/useCategories';
 import { useBudgets } from '../../budgets/hooks/useBudgets';
 import { formatCurrency, percentageOf } from '../../../utils/format';
+import { calculateAccountBalances } from '../../../utils/financial';
 
 const CHART_COLORS = ['#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#dbeafe'];
 
@@ -24,6 +25,11 @@ export function ReportsPage() {
   const { accounts } = useAccounts(coupleId);
   const { categories } = useCategories(coupleId);
   const { budgets } = useBudgets(coupleId, currentMonth);
+
+  const computedAccounts = useMemo(
+    () => calculateAccountBalances(accounts, transactions),
+    [accounts, transactions]
+  );
 
   useEffect(() => {
     document.title = 'Reports | OurBalance';
@@ -99,7 +105,7 @@ export function ReportsPage() {
     }));
   }, [budgets, transactions, categories, currentMonth]);
 
-  const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
+  const totalBalance = computedAccounts.reduce((s, a) => s + a.balance, 0);
 
   return (
     <div className="page-container">
@@ -288,13 +294,13 @@ export function ReportsPage() {
             <h2 style={{ fontSize: '0.9375rem', fontWeight: 600 }}>Saldo Rekening</h2>
           </div>
           <div className="card-body">
-            {accounts.length === 0 ? (
+            {computedAccounts.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '24px', color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
                 Belum ada rekening
               </div>
             ) : (
               <div>
-                {accounts.map((acc) => (
+                {computedAccounts.map((acc) => (
                   <div key={acc.id} className="report-summary-row">
                     <span className="report-summary-label">{acc.name}</span>
                     <span className={`report-summary-value ${acc.balance < 0 ? 'text-danger' : ''}`}>

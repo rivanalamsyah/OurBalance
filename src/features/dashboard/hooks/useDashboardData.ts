@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Timestamp } from 'firebase/firestore';
 import { getCurrentMonth, percentageOf } from '../../../utils/format';
+import { calculateAccountBalances } from '../../../utils/financial';
 import type { Transaction, Account, Budget, Goal, Category, UserProfile } from '../../../types';
 
 export function useDashboardData(
@@ -13,6 +14,11 @@ export function useDashboardData(
   _partnerProfile: UserProfile | null
 ) {
   const currentMonth = getCurrentMonth();
+
+  const computedAccounts = useMemo(
+    () => calculateAccountBalances(accounts, transactions),
+    [accounts, transactions]
+  );
 
   // Compute spending per category from actual transactions — same logic as BudgetPage
   // so Dashboard budget.spent is always consistent with the Anggaran page.
@@ -57,8 +63,8 @@ export function useDashboardData(
       }
     });
 
-    const myAccounts = accounts.filter((a) => a.userId === userProfile?.uid);
-    const partnerAccounts = accounts.filter((a) => a.userId === userProfile?.partnerId);
+    const myAccounts = computedAccounts.filter((a) => a.userId === userProfile?.uid);
+    const partnerAccounts = computedAccounts.filter((a) => a.userId === userProfile?.partnerId);
     const personalBalance = myAccounts.reduce((sum, a) => sum + a.balance, 0);
     const partnerBalance = partnerAccounts.reduce((sum, a) => sum + a.balance, 0);
     const totalBalance = personalBalance + partnerBalance;
@@ -76,7 +82,7 @@ export function useDashboardData(
       cashFlow: monthlyIncome - monthlyExpense,
       budgetUsage,
     };
-  }, [transactions, accounts, budgetsWithActualSpent, userProfile, currentMonth]);
+  }, [transactions, computedAccounts, budgetsWithActualSpent, userProfile, currentMonth]);
 
   const recentTransactions = useMemo(() => transactions.slice(0, 8), [transactions]);
 
@@ -90,23 +96,22 @@ export function useDashboardData(
       if (tx.type !== 'expense' && tx.type !== 'shared_expense') return;
       const date = tx.date instanceof Timestamp ? tx.date.toDate() : new Date(tx.date as string | number | Date);
       if (date < start || date > end) return;
-      map[tx.categoryId] = (map[tx.categoryId] || 0) + tx.amount;
+      const cat = categories.find((c) => c.id === tx.categoryId);
+      const catName = cat ? cat.name : 'Lainnya';
+      map[catName] = (map[catName] || 0) + tx.amount;
     });
 
-    return Object.entries(map)
-      .map(([catId, amount]) => ({
-        name: categories.find((c) => c.id === catId)?.name || 'Lainnya',
-        amount,
-        percentage: percentageOf(amount, stats.monthlyExpense),
-      }))
-      .sort((a, b) => b.amount - a.amount)
-      .slice(0, 5);
-  }, [transactions, categories, currentMonth, stats.monthlyExpense]);
+    const totalCatExpense = Object.values(map).reduce((sum, val) => sum + val, 0);
+    return Object.entries(map).map(([name, amount]) => ({
+      name,
+      amount,
+      percentage: totalCatExpense > 0 ? Math.round((amount / totalCatExpense) * 100) : 0,
+    }));
+  }, [transactions, categories, currentMonth]);
 
-  const activeGoals = useMemo(
-    () => goals.filter((g) => g.status === 'active').slice(0, 3),
-    [goals]
-  );
+  const activeGoals = useMemo(() => {
+    return goals.filter((g) => g.status === 'active');
+  }, [goals]);
 
   return {
     stats,
