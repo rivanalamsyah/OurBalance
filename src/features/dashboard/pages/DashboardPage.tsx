@@ -40,7 +40,7 @@ export function DashboardPage() {
     document.title = 'Dashboard | OurBalance';
   }, []);
 
-  const { stats, recentTransactions, spendingByCategory, activeGoals } = useDashboardData(
+  const { stats, recentTransactions, spendingByCategory, activeGoals, budgetsWithActualSpent } = useDashboardData(
     transactions,
     accounts,
     budgets,
@@ -180,7 +180,7 @@ export function DashboardPage() {
               </Link>
             </div>
             <div className="card-body">
-              {budgets.length === 0 ? (
+              {budgetsWithActualSpent.length === 0 ? (
                 <div className="empty-state" style={{ padding: '24px 0' }}>
                   <PieChart className="empty-state-icon" />
                   <p className="empty-state-title">Belum ada anggaran</p>
@@ -188,7 +188,7 @@ export function DashboardPage() {
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {budgets.slice(0, 5).map((budget) => {
+                  {budgetsWithActualSpent.slice(0, 5).map((budget) => {
                     const cat = categories.find((c) => c.id === budget.categoryId);
                     const pct = percentageOf(budget.spent, budget.amount);
                     return (

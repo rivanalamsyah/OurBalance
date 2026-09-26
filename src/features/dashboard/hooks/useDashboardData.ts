@@ -14,6 +14,32 @@ export function useDashboardData(
 ) {
   const currentMonth = getCurrentMonth();
 
+  // Compute spending per category from actual transactions — same logic as BudgetPage
+  // so Dashboard budget.spent is always consistent with the Anggaran page.
+  const spendingByCat = useMemo(() => {
+    const [year, m] = currentMonth.split('-').map(Number);
+    const start = new Date(year, m - 1, 1);
+    const end = new Date(year, m, 0, 23, 59, 59);
+    const map: Record<string, number> = {};
+
+    transactions.forEach((tx) => {
+      if (tx.type !== 'expense' && tx.type !== 'shared_expense') return;
+      const date = tx.date instanceof Timestamp ? tx.date.toDate() : new Date(tx.date as string | number | Date);
+      if (date < start || date > end) return;
+      map[tx.categoryId] = (map[tx.categoryId] || 0) + tx.amount;
+    });
+    return map;
+  }, [transactions, currentMonth]);
+
+  // Budgets enriched with actual spent from transactions (not the stale Firestore spent field)
+  const budgetsWithActualSpent = useMemo(() =>
+    budgets.map((b) => ({
+      ...b,
+      spent: spendingByCat[b.categoryId] || 0,
+    })),
+    [budgets, spendingByCat]
+  );
+
   const stats = useMemo(() => {
     const [year, m] = currentMonth.split('-').map(Number);
     const start = new Date(year, m - 1, 1);
@@ -27,6 +53,7 @@ export function useDashboardData(
       if (date >= start && date <= end) {
         if (tx.type === 'income') monthlyIncome += tx.amount;
         else if (tx.type === 'expense' || tx.type === 'shared_expense') monthlyExpense += tx.amount;
+        // 'transfer' is intentionally excluded — it's not income or expense
       }
     });
 
@@ -36,8 +63,8 @@ export function useDashboardData(
     const partnerBalance = partnerAccounts.reduce((sum, a) => sum + a.balance, 0);
     const totalBalance = personalBalance + partnerBalance;
 
-    const totalBudget = budgets.reduce((sum, b) => sum + b.amount, 0);
-    const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
+    const totalBudget = budgetsWithActualSpent.reduce((sum, b) => sum + b.amount, 0);
+    const totalSpent = budgetsWithActualSpent.reduce((sum, b) => sum + b.spent, 0);
     const budgetUsage = percentageOf(totalSpent, totalBudget);
 
     return {
@@ -49,7 +76,7 @@ export function useDashboardData(
       cashFlow: monthlyIncome - monthlyExpense,
       budgetUsage,
     };
-  }, [transactions, accounts, budgets, userProfile, currentMonth]);
+  }, [transactions, accounts, budgetsWithActualSpent, userProfile, currentMonth]);
 
   const recentTransactions = useMemo(() => transactions.slice(0, 8), [transactions]);
 
@@ -86,5 +113,6 @@ export function useDashboardData(
     recentTransactions,
     spendingByCategory,
     activeGoals,
+    budgetsWithActualSpent,
   };
 }

@@ -10,7 +10,6 @@ import { useTransactions } from '../hooks/useTransactions';
 import { useAccounts } from '../../accounts/hooks/useAccounts';
 import { useCategories } from '../../settings/hooks/useCategories';
 import { addTransaction, updateTransaction, deleteTransaction } from '../services/transactionService';
-import { updateAccount } from '../../accounts/services/accountService';
 import { formatCurrency, formatDate, getCurrentMonth } from '../../../utils/format';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
@@ -170,9 +169,13 @@ export function TransactionsPage() {
 
       if (formData.type === 'transfer' && formData.toAccountId) {
         data.toAccountId = formData.toAccountId;
+      } else {
+        data.toAccountId = '';
       }
       if (formData.notes && formData.notes.trim()) {
         data.notes = formData.notes.trim();
+      } else {
+        data.notes = '';
       }
 
       if (editingTx) {
@@ -180,18 +183,6 @@ export function TransactionsPage() {
         success('Transaksi berhasil diperbarui');
       } else {
         await addTransaction(data as any);
-        const account = accounts.find((a) => a.id === formData.accountId);
-        if (account) {
-          let newBalance = account.balance;
-          if (formData.type === 'income') newBalance += amount;
-          else if (formData.type === 'expense' || formData.type === 'shared_expense') newBalance -= amount;
-          else if (formData.type === 'transfer') {
-            newBalance -= amount;
-            const toAccount = accounts.find((a) => a.id === formData.toAccountId);
-            if (toAccount) await updateAccount(toAccount.id, { balance: toAccount.balance + amount });
-          }
-          await updateAccount(account.id, { balance: newBalance });
-        }
         success('Transaksi berhasil ditambahkan');
       }
       closeModal();
@@ -208,19 +199,6 @@ export function TransactionsPage() {
     setDeleting(true);
     try {
       await deleteTransaction(deletingTx.id);
-      const account = accounts.find((a) => a.id === deletingTx.accountId);
-      if (account) {
-        let newBalance = account.balance;
-        if (deletingTx.type === 'income') newBalance -= deletingTx.amount;
-        else if (deletingTx.type === 'expense' || deletingTx.type === 'shared_expense')
-          newBalance += deletingTx.amount;
-        else if (deletingTx.type === 'transfer') {
-          newBalance += deletingTx.amount;
-          const toAccount = accounts.find((a) => a.id === deletingTx.toAccountId);
-          if (toAccount) await updateAccount(toAccount.id, { balance: toAccount.balance - deletingTx.amount });
-        }
-        await updateAccount(account.id, { balance: newBalance });
-      }
       success('Transaksi berhasil dihapus');
       setDeletingTx(null);
     } catch {
