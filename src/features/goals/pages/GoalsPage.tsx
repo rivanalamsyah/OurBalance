@@ -52,13 +52,17 @@ function ContributionPanel({ goal, userId }: { goal: Goal; userId: string; onClo
     if (!amount || Number(amount) <= 0) return;
     setSaving(true);
     try {
-      await addContribution(goal.id, {
+      const payload: Record<string, any> = {
         goalId: goal.id,
         userId,
         amount: Number(amount),
-        notes: notes.trim() || undefined,
         date: Timestamp.now(),
-      });
+      };
+      if (notes && notes.trim()) {
+        payload.notes = notes.trim();
+      }
+
+      await addContribution(goal.id, payload as any);
       success('Tabungan berhasil ditambahkan');
       setAmount('');
       setNotes('');
@@ -198,23 +202,30 @@ export function GoalsPage() {
     if (!validate() || !coupleId || !user) return;
     setSaving(true);
     try {
-      const data = {
+      const data: Record<string, any> = {
         coupleId,
-        ownerId: formData.type === 'personal' ? user.uid : undefined,
         name: formData.name.trim(),
-        description: formData.description.trim() || undefined,
         targetAmount: Number(formData.targetAmount),
         currentAmount: Number(formData.currentAmount) || 0,
-        deadline: formData.deadline ? Timestamp.fromDate(new Date(formData.deadline)) : undefined,
         type: formData.type,
         status: formData.status,
       };
 
+      if (formData.type === 'personal') {
+        data.ownerId = user.uid;
+      }
+      if (formData.description && formData.description.trim()) {
+        data.description = formData.description.trim();
+      }
+      if (formData.deadline) {
+        data.deadline = Timestamp.fromDate(new Date(formData.deadline));
+      }
+
       if (editingGoal) {
-        await updateGoal(editingGoal.id, data);
+        await updateGoal(editingGoal.id, data as any);
         success('Target impian berhasil diperbarui');
       } else {
-        await addGoal(data);
+        await addGoal(data as any);
         success('Target impian berhasil dibuat');
       }
       closeModal();

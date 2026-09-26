@@ -157,24 +157,29 @@ export function TransactionsPage() {
     setSaving(true);
     try {
       const amount = Number(formData.amount);
-      const data = {
+      const data: Record<string, any> = {
         userId: user.uid,
         coupleId,
         type: formData.type,
         amount,
         categoryId: formData.categoryId,
         accountId: formData.accountId,
-        toAccountId: formData.toAccountId || undefined,
         date: Timestamp.fromDate(new Date(formData.date)),
         description: formData.description.trim(),
-        notes: formData.notes.trim() || undefined,
       };
 
+      if (formData.type === 'transfer' && formData.toAccountId) {
+        data.toAccountId = formData.toAccountId;
+      }
+      if (formData.notes && formData.notes.trim()) {
+        data.notes = formData.notes.trim();
+      }
+
       if (editingTx) {
-        await updateTransaction(editingTx.id, data);
+        await updateTransaction(editingTx.id, data as any);
         success('Transaksi berhasil diperbarui');
       } else {
-        await addTransaction(data);
+        await addTransaction(data as any);
         const account = accounts.find((a) => a.id === formData.accountId);
         if (account) {
           let newBalance = account.balance;
@@ -190,7 +195,8 @@ export function TransactionsPage() {
         success('Transaksi berhasil ditambahkan');
       }
       closeModal();
-    } catch {
+    } catch (err) {
+      console.error('Error saving transaction:', err);
       showError('Gagal menyimpan transaksi');
     } finally {
       setSaving(false);

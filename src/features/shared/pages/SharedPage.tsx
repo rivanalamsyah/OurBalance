@@ -118,18 +118,22 @@ export function SharedPage() {
         ];
       }
 
-      await addSharedExpense({
+      const payload: Record<string, any> = {
         coupleId,
         paidBy: formData.paidBy,
         categoryId: formData.categoryId,
         amount,
         description: formData.description.trim(),
-        notes: formData.notes.trim() || undefined,
         date: Timestamp.fromDate(new Date(formData.date)),
         splitType: formData.splitType,
         splits,
         isSettled: false,
-      });
+      };
+      if (formData.notes && formData.notes.trim()) {
+        payload.notes = formData.notes.trim();
+      }
+
+      await addSharedExpense(payload as any);
 
       success('Pengeluaran bersama berhasil ditambahkan');
       closeModal();
