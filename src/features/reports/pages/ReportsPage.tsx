@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { BarChart3, TrendingUp, TrendingDown, Wallet, ChevronLeft, ChevronRight, FileDown } from 'lucide-react';
+import { BarChart3, TrendingUp, TrendingDown, Wallet, ChevronLeft, ChevronRight, FileDown, Loader2 } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 import { format, addMonths, subMonths } from 'date-fns';
 import {
@@ -142,13 +142,72 @@ export function ReportsPage() {
         </div>
         <button
           id="btn-export-pdf"
-          className="btn btn-primary"
           onClick={handleExportPDF}
           disabled={isExporting}
           aria-label="Export laporan ke PDF"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '10px 20px',
+            fontSize: '0.875rem',
+            fontWeight: 600,
+            letterSpacing: '0.01em',
+            color: '#fff',
+            background: isExporting
+              ? 'linear-gradient(135deg, #64748b 0%, #475569 100%)'
+              : 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)',
+            border: 'none',
+            borderRadius: 10,
+            cursor: isExporting ? 'not-allowed' : 'pointer',
+            boxShadow: isExporting
+              ? 'none'
+              : '0 4px 14px rgba(37, 99, 235, 0.35), inset 0 1px 0 rgba(255,255,255,0.15)',
+            transition: 'all 0.2s ease',
+            position: 'relative',
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
+          }}
+          onMouseEnter={(e) => {
+            if (!isExporting) {
+              (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)';
+              (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 6px 20px rgba(37, 99, 235, 0.45), inset 0 1px 0 rgba(255,255,255,0.2)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)';
+            (e.currentTarget as HTMLButtonElement).style.boxShadow = isExporting
+              ? 'none'
+              : '0 4px 14px rgba(37, 99, 235, 0.35), inset 0 1px 0 rgba(255,255,255,0.15)';
+          }}
+          onMouseDown={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0) scale(0.98)';
+          }}
+          onMouseUp={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px) scale(1)';
+          }}
         >
-          <FileDown size={16} />
-          {isExporting ? 'Menyiapkan PDF...' : 'Export PDF'}
+          {/* Shimmer overlay */}
+          {!isExporting && (
+            <span
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.18) 50%, transparent 60%)',
+                backgroundSize: '200% 100%',
+                animation: 'btnShimmer 2.4s ease infinite',
+                borderRadius: 'inherit',
+                pointerEvents: 'none',
+              }}
+            />
+          )}
+          {isExporting ? (
+            <Loader2 size={15} style={{ animation: 'spin 0.7s linear infinite' }} />
+          ) : (
+            <FileDown size={15} />
+          )}
+          <span>{isExporting ? 'Menyiapkan PDF…' : 'Export PDF'}</span>
         </button>
       </div>
 
