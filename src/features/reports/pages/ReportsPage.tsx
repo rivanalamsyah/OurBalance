@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { BarChart3, TrendingUp, TrendingDown, Wallet, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BarChart3, TrendingUp, TrendingDown, Wallet, ChevronLeft, ChevronRight, FileDown } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 import { format, addMonths, subMonths } from 'date-fns';
 import {
@@ -13,12 +13,16 @@ import { useCategories } from '../../settings/hooks/useCategories';
 import { useBudgets } from '../../budgets/hooks/useBudgets';
 import { formatCurrency, percentageOf } from '../../../utils/format';
 import { calculateAccountBalances } from '../../../utils/financial';
+import { generateFinancialReportPDF } from '../../../utils/pdfExport';
+import { useAuth } from '../../../contexts/AuthContext';
 
 const CHART_COLORS = ['#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#dbeafe'];
 
 export function ReportsPage() {
   const { coupleId } = useCouple();
+  const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [isExporting, setIsExporting] = useState(false);
   const currentMonth = format(selectedDate, 'yyyy-MM');
 
   const { transactions } = useTransactions(coupleId);
@@ -107,6 +111,28 @@ export function ReportsPage() {
 
   const totalBalance = computedAccounts.reduce((s, a) => s + a.balance, 0);
 
+  const handleExportPDF = async () => {
+    setIsExporting(true);
+    try {
+      generateFinancialReportPDF({
+        periodLabel: format(selectedDate, 'MMMM yyyy'),
+        currentMonth,
+        generatedAt: new Date(),
+        userDisplayName: user?.displayName || user?.email || undefined,
+        totalBalance,
+        monthlyIncome: monthData.income,
+        monthlyExpense: monthData.expense,
+        cashFlow: monthData.cashFlow,
+        accounts: computedAccounts,
+        categories,
+        categoryData: monthData.categoryData,
+        transactions,
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="page-container">
       <div className="page-header">
@@ -114,6 +140,16 @@ export function ReportsPage() {
           <h1 className="page-title">Laporan Keuangan</h1>
           <p className="page-subtitle">Analisis tren & pengeluaran bulanan</p>
         </div>
+        <button
+          id="btn-export-pdf"
+          className="btn btn-primary"
+          onClick={handleExportPDF}
+          disabled={isExporting}
+          aria-label="Export laporan ke PDF"
+        >
+          <FileDown size={16} />
+          {isExporting ? 'Menyiapkan PDF...' : 'Export PDF'}
+        </button>
       </div>
 
       {/* Month Navigation */}
