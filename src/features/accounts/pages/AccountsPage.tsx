@@ -121,21 +121,31 @@ export function AccountsPage() {
     if (!validate() || !coupleId || !user) return;
     setSaving(true);
     try {
-      const data = {
-        userId: user.uid,
-        coupleId,
-        name: formData.name.trim(),
-        type: formData.type,
-        balance: Number(formData.balance),
-        currency: 'IDR',
-        isShared: formData.isShared,
-      };
-
       if (editingAcc) {
-        await updateAccount(editingAcc.id, data);
+        // On edit: only update editable metadata — do NOT touch initialBalance
+        // because balance is computed from transactions via calculateAccountBalances
+        await updateAccount(editingAcc.id, {
+          userId: user.uid,
+          coupleId,
+          name: formData.name.trim(),
+          type: formData.type,
+          currency: 'IDR',
+          isShared: formData.isShared,
+        });
         success('Rekening berhasil diperbarui');
       } else {
-        await addAccount(data);
+        // On create: store the opening balance as initialBalance (ledger base)
+        const openingBalance = Number(formData.balance) || 0;
+        await addAccount({
+          userId: user.uid,
+          coupleId,
+          name: formData.name.trim(),
+          type: formData.type,
+          balance: openingBalance,
+          initialBalance: openingBalance,
+          currency: 'IDR',
+          isShared: formData.isShared,
+        });
         success('Rekening berhasil ditambahkan');
       }
       closeModal();
@@ -267,15 +277,32 @@ export function AccountsPage() {
             options={ACCOUNT_TYPES.map((t) => ({ value: t.value, label: t.label }))}
             required
           />
-          <Input
-            type="number"
-            label="Saldo Awal (IDR)"
-            placeholder="0"
-            value={formData.balance}
-            onChange={(e) => setFormData({ ...formData, balance: e.target.value })}
-            error={formErrors.balance}
-            required
-          />
+          {/* Show balance input only on Create — on Edit, balance is computed from transactions */}
+          {!editingAcc && (
+            <Input
+              type="number"
+              label="Saldo Awal (IDR)"
+              placeholder="0"
+              value={formData.balance}
+              onChange={(e) => setFormData({ ...formData, balance: e.target.value })}
+              error={formErrors.balance}
+              required
+            />
+          )}
+          {editingAcc && (
+            <div style={{
+              padding: '10px 12px',
+              background: 'var(--color-primary-50)',
+              borderRadius: 8,
+              border: '1px solid var(--color-primary-100)',
+              fontSize: '0.8125rem',
+              color: 'var(--color-primary-700)',
+              lineHeight: 1.5,
+            }}>
+              <strong>💡 Info:</strong> Saldo rekening dihitung otomatis dari riwayat transaksi.
+              Untuk mengubah saldo, tambahkan transaksi penyesuaian.
+            </div>
+          )}
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.875rem' }}>
             <input
               type="checkbox"
