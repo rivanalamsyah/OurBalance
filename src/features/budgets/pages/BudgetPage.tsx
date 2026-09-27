@@ -308,6 +308,7 @@ export function BudgetPage() {
         onClose={closeModal}
         title={editingBudget ? 'Edit Anggaran' : 'Buat Anggaran'}
         size="sm"
+        loading={saving}
         footer={
           <>
             <Button variant="outline" onClick={closeModal} disabled={saving}>Batal</Button>

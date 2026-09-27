@@ -388,6 +388,7 @@ export function SettingsPage() {
         onClose={() => setShowCatModal(false)}
         title={editingCat ? 'Edit Kategori' : 'Tambah Kategori'}
         size="sm"
+        loading={savingCat}
         footer={
           <>
             <Button variant="outline" onClick={() => setShowCatModal(false)} disabled={savingCat}>Batal</Button>

@@ -284,34 +284,25 @@
   align-items: flex-start;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
+  padding-bottom: calc(var(--space-3) + 3px);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
   border: 1px solid transparent;
   background: var(--color-surface);
+  position: relative;
+  overflow: hidden;
 }
 
-.toast-success {
-  border-color: var(--color-success-light);
-  background: #f0fdf4;
-}
+.toast-success { border-color: var(--color-success-light); background: #f0fdf4; }
 .toast-success .toast-icon { color: var(--color-success); }
 
-.toast-error {
-  border-color: var(--color-danger-light);
-  background: #fef2f2;
-}
+.toast-error { border-color: var(--color-danger-light); background: #fef2f2; }
 .toast-error .toast-icon { color: var(--color-danger); }
 
-.toast-warning {
-  border-color: var(--color-warning-light);
-  background: #fffbeb;
-}
+.toast-warning { border-color: var(--color-warning-light); background: #fffbeb; }
 .toast-warning .toast-icon { color: var(--color-warning); }
 
-.toast-info {
-  border-color: var(--color-info-light);
-  background: var(--color-primary-50);
-}
+.toast-info { border-color: var(--color-info-light); background: var(--color-primary-50); }
 .toast-info .toast-icon { color: var(--color-info); }
 
 .toast-icon { display: flex; flex-shrink: 0; padding-top: 1px; }
@@ -333,6 +324,27 @@
   transition: color var(--transition-fast);
 }
 .toast-close:hover { color: var(--color-text-primary); }
+
+/* Progress bar auto-dismiss indicator */
+.toast-progress-track {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: transparent;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  overflow: hidden;
+}
+.toast-progress-bar {
+  height: 100%;
+  border-radius: inherit;
+  width: 100%;
+}
+.toast-progress-success { background: var(--color-success); opacity: 0.5; }
+.toast-progress-error   { background: var(--color-danger);  opacity: 0.5; }
+.toast-progress-warning { background: var(--color-warning); opacity: 0.5; }
+.toast-progress-info    { background: var(--color-info);    opacity: 0.5; }
 
 /* --- Sidebar --- */
 .sidebar {

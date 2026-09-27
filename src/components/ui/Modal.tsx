@@ -10,6 +10,8 @@ export interface ModalProps {
   children?: ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   footer?: ReactNode;
+  /** When true, overlay click, Escape key, and close button are all blocked */
+  loading?: boolean;
 }
 
 const sizeMap = {
@@ -19,7 +21,16 @@ const sizeMap = {
   xl: '860px',
 };
 
-export function Modal({ isOpen, onClose, title, description, children, size = 'md', footer }: ModalProps) {
+export function Modal({
+  isOpen,
+  onClose,
+  title,
+  description,
+  children,
+  size = 'md',
+  footer,
+  loading = false,
+}: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const firstFocusRef = useRef<HTMLButtonElement>(null);
 
@@ -32,13 +43,17 @@ export function Modal({ isOpen, onClose, title, description, children, size = 'm
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape' && !loading) onClose();
     };
     if (isOpen) document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, loading]);
 
   if (!isOpen) return null;
+
+  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === overlayRef.current && !loading) onClose();
+  };
 
   return (
     <div
@@ -47,11 +62,13 @@ export function Modal({ isOpen, onClose, title, description, children, size = 'm
       role="dialog"
       aria-modal
       aria-labelledby={title ? 'modal-title' : undefined}
-      onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
+      onClick={handleOverlayClick}
+      style={loading ? { cursor: 'not-allowed' } : undefined}
     >
       <div
         className="modal-container animate-fade-in"
         style={{ maxWidth: sizeMap[size] }}
+        onClick={(e) => e.stopPropagation()}
       >
         {(title || description) && (
           <div className="modal-header">
@@ -62,8 +79,10 @@ export function Modal({ isOpen, onClose, title, description, children, size = 'm
             <button
               ref={firstFocusRef}
               className="modal-close-btn"
-              onClick={onClose}
+              onClick={() => { if (!loading) onClose(); }}
               aria-label="Close modal"
+              disabled={loading}
+              style={loading ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
             >
               <X size={18} />
             </button>
@@ -100,7 +119,7 @@ export function ConfirmDialog({
   loading = false,
 }: ConfirmDialogProps) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="sm">
+    <Modal isOpen={isOpen} onClose={onClose} size="sm" loading={loading}>
       <div className="confirm-dialog">
         <h3 className="confirm-title">{title}</h3>
         <p className="confirm-message">{message}</p>

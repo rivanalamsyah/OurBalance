@@ -49,13 +49,17 @@ function ContributionPanel({ goal, userId }: { goal: Goal; userId: string; onClo
   }, [goal.id]);
 
   async function handleAdd() {
-    if (!amount || Number(amount) <= 0) return;
+    const num = Number(amount);
+    if (!amount || num <= 0) {
+      showError('Masukkan jumlah nominal yang valid (lebih dari 0)');
+      return;
+    }
     setSaving(true);
     try {
       const payload: Record<string, any> = {
         goalId: goal.id,
         userId,
-        amount: Number(amount),
+        amount: num,
         date: Timestamp.now(),
       };
       if (notes && notes.trim()) {
@@ -64,10 +68,11 @@ function ContributionPanel({ goal, userId }: { goal: Goal; userId: string; onClo
 
       await addContribution(goal.id, payload as any);
       success('Tabungan berhasil ditambahkan');
+      // Only reset on success
       setAmount('');
       setNotes('');
     } catch {
-      showError('Gagal menambah tabungan');
+      showError('Gagal menambah tabungan. Periksa koneksi dan coba lagi.');
     } finally {
       setSaving(false);
     }
@@ -391,6 +396,7 @@ export function GoalsPage() {
         onClose={closeModal}
         title={editingGoal ? 'Edit Target Impian' : 'Target Impian Baru'}
         size="md"
+        loading={saving}
         footer={
           <>
             <Button variant="outline" onClick={closeModal} disabled={saving}>Batal</Button>

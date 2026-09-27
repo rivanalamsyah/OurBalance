@@ -375,6 +375,7 @@ export function TransactionsPage() {
         onClose={closeModal}
         title={editingTx ? 'Edit Transaksi' : 'Tambah Transaksi'}
         size="md"
+        loading={saving}
         footer={
           <>
             <Button variant="outline" onClick={closeModal} disabled={saving}>Batal</Button>

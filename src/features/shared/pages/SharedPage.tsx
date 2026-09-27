@@ -136,14 +136,15 @@ export function SharedPage() {
       await addSharedExpense(payload as any);
 
       success('Pengeluaran bersama berhasil ditambahkan');
-      closeModal();
+      // Reset form only after confirmed Firestore success
       setFormData({
         description: '', amount: '', categoryId: '', paidBy: '',
         date: new Date().toISOString().split('T')[0], splitType: 'equal',
         myShare: '', partnerShare: '', notes: '',
       });
+      closeModal();
     } catch {
-      showError('Gagal menambah pengeluaran bersama');
+      showError('Gagal menambah pengeluaran bersama. Periksa koneksi dan coba lagi.');
     } finally {
       setSaving(false);
     }
@@ -317,6 +318,7 @@ export function SharedPage() {
         onClose={closeModal}
         title="Tambah Pengeluaran Bersama"
         size="md"
+        loading={saving}
         footer={
           <>
             <Button variant="outline" onClick={closeModal} disabled={saving}>Batal</Button>

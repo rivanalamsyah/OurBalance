@@ -252,6 +252,7 @@ export function AccountsPage() {
         onClose={closeModal}
         title={editingAcc ? 'Edit Rekening' : 'Tambah Rekening'}
         size="sm"
+        loading={saving}
         footer={
           <>
             <Button variant="outline" onClick={closeModal} disabled={saving}>Batal</Button>
